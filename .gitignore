@@ -1,0 +1,5 @@
+client_secrets.json
+credentials_module.json
+settings.yaml
+venv/
+.env
