@@ -3,6 +3,7 @@ from pydrive2.drive import GoogleDrive
 from pydrive2.files import FileNotUploadedError
 from googleapiclient.http import MediaIoBaseDownload, MediaFileUpload
 from googleapiclient.discovery import build
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import io
 import tempfile
@@ -86,7 +87,7 @@ def convertir_pdf(archivo, driveDestino,service, drive):
         if temp_file_path:
             os.remove(temp_file_path)
 
-def generar_certificados(driveExcel, drivePDF):
+def generar_certificados_secuencial(driveExcel, drivePDF):
     drive, creds = login()
     service = build('drive', 'v3', credentials=creds)
 
@@ -99,14 +100,38 @@ def generar_certificados(driveExcel, drivePDF):
     except Exception as e:
         print(f"Ocurrió un error al generar certificado: {e}")
 
+def generar_certificados_paralelo(driveExcel, drivePDF):
+    drive, creds = login()
+    service = build('drive', 'v3', credentials=creds)
+
+    try:
+        archivos = listar_archivos(driveExcel, drive)
+        if not archivos:
+            print("No hay archivos para procesar.")
+            return
+        
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = []
+            for archivo in archivos:
+                futures.append(executor.submit(convertir_pdf, archivo, drivePDF, service, drive))
+
+            for future in as_completed(futures):
+                future.result()  # Esto captura cualquier excepción ocurrida en el hilo
+
+    except Exception as e:
+        print(f"Ocurrió un error al generar certificado: {e}")
+
 
 if __name__ == "__main__":
     id_folder_excel = os.getenv("ID_DRIVE_SHEETS")
     id_folder_pdf = os.getenv("ID_DRIVE_DESTINO")
 
     start_time = time.time()
+    #Generar certificados secuencial
+    #generar_certificados_secuencial(id_folder_excel, id_folder_pdf)
 
-    generar_certificados(id_folder_excel, id_folder_pdf)
+    #Generar certificados paralelo
+    generar_certificados_paralelo(id_folder_excel, id_folder_pdf)
     
     end_time = time.time()
     elapsed_time = end_time - start_time
