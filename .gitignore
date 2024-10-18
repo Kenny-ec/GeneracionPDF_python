@@ -3,3 +3,4 @@ credentials_module.json
 settings.yaml
 venv/
 .env
+/src/__pycache__
