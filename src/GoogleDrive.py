@@ -24,26 +24,33 @@ def listar_archivos(id_folder, drive):
 def convertir_pdf(archivo, driveDestino,service, drive):
     archivo_id = archivo['id']
     nombre_archivo = archivo['title']
-
-    # Solicitar la exportación a PDF
-    request = service.files().export_media(fileId=archivo_id, mimeType='application/pdf')
-
-    # Crear un buffer para almacenar el PDF
-    pdf_io = io.BytesIO()
-
-    # Descargar el archivo PDF
-    downloader = MediaIoBaseDownload(pdf_io, request)
-    done = False
+    
     try:
+        # Solicitar la exportación a PDF
+        request = service.files().export_media(fileId=archivo_id, mimeType='application/pdf')
+
+        # Crear un stream para almacenar el PDF
+        pdf_stream = io.BytesIO()
+
+        # Descargar el archivo PDF directamente al stream
+        downloader = MediaIoBaseDownload(pdf_stream, request)
+        done = False
+
         while done is False:
             status, done = downloader.next_chunk()
-            logger.info(f"Descargando {nombre_archivo}: {int(status.progress() * 100)}% completado.")
 
-        # Subir el archivo PDF desde el archivo temporal a Google Drive
+        pdf_stream.seek(0)    
+
+        # Subir el archivo PDF directamente desde el stream a Google Drive
+        #media = MediaIoBaseUpload(pdf_stream, mimetype='application/pdf')
         archivo_pdf = drive.CreateFile({
             'title': f"{nombre_archivo}.pdf",
             'parents': [{"id": driveDestino}]
         })
+        archivo_pdf.content = pdf_stream
+        archivo_pdf.Upload()
+        
+        logger.info(f"Se convirtió el archivo: {nombre_archivo} a PDF")
 
     except Exception as e:
         logger.error(f"Ocurrió un error al convertir archivo {nombre_archivo} a PDF: {e}")
