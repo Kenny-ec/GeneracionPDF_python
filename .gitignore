@@ -4,3 +4,4 @@ settings.yaml
 venv/
 .env
 /src/__pycache__
+/logs
