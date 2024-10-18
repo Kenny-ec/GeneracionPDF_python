@@ -5,9 +5,6 @@ from src.auth import login
 import io
 import tempfile
 import os
-import time
-
-directorio_credenciales = os.getenv("DIRECTORIO_CREDENCIALES")
     
 def listar_archivos(id_folder, drive):
     try:
